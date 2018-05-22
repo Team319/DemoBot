@@ -24,21 +24,9 @@ public class Drivetrain extends Subsystem {
 
 	private boolean isHighGear = true;
 
-	public static int LOW_GEAR_PROFILE = 2;
-	public static int HIGH_GEAR_PROFILE = 0;
-	public static int ROTATION_PROFILE = 1;
+	public LeaderBobTalonSRX leftLead = new LeaderBobTalonSRX(7, new BobTalonSRX(8)); //
+	public LeaderBobTalonSRX rightLead = new LeaderBobTalonSRX(3, new BobTalonSRX(2)); //
 
-
-	private SRXGains lowGearGains = new SRXGains(LOW_GEAR_PROFILE, 0.0, 0.0, 0.0, 0.0, 0); //
-	private SRXGains highGearGains = new SRXGains(HIGH_GEAR_PROFILE, 0.0, 0.0, 0.0, 0.0, 0); // 
-	private SRXGains rotationGains = new SRXGains(ROTATION_PROFILE, 0.0, 0.00, 0.0, 0.0, 0); // 
-
-	private BobTalonSRX leftFollower = new BobTalonSRX(0);
-	private BobTalonSRX rightFollower = new BobTalonSRX(0);
-	public LeaderBobTalonSRX leftLead = new LeaderBobTalonSRX(0, leftFollower); // 8
-	public LeaderBobTalonSRX rightLead = new LeaderBobTalonSRX(0, rightFollower); // 1
-
-	private PigeonIMU pigeon = new PigeonIMU(leftFollower);
 
 	public Drivetrain() {
 
@@ -61,37 +49,11 @@ public class Drivetrain extends Subsystem {
 
 		setNeutralMode(NeutralMode.Coast);
 
-		configGains(highGearGains);
-		configGains(lowGearGains);
-		configGains(rotationGains);
-
-		// configure distance sensor
-		// Remote 0 will be the other side's Talon
-		rightLead.configRemoteSensor0(leftLead.getDeviceID(), RemoteSensorSource.TalonSRX_SelectedSensor);
-		rightLead.configSensorSum(FeedbackDevice.RemoteSensor0, FeedbackDevice.CTRE_MagEncoder_Relative);
-		rightLead.configPrimaryFeedbackDevice(FeedbackDevice.SensorSum, 0.5); // distances from left and right are
-																				// summed, so average them
-		rightLead.configMaxIntegralAccumulator(ROTATION_PROFILE, 0);
-
-		// configure angle sensor
-		// Remote 1 will be a pigeon
-		rightLead.configRemoteSensor1(leftFollower.getDeviceID(), RemoteSensorSource.GadgeteerPigeon_Yaw);
-		rightLead.configSecondaryFeedbackDevice(FeedbackDevice.RemoteSensor1, (0.0 / 0.0)); // Coefficient for
-																									// Pigeon to
-
-		// convert to 360
-		leftLead.setStatusFramePeriod(StatusFrame.Status_2_Feedback0, 5, 0);
-		rightLead.configAuxPIDPolarity(false, 0);
-	}
 
 	public void initDefaultCommand() {
 		setDefaultCommand(new BobDrive());
 	}
 
-	public void configGains(SRXGains gains) {
-		this.leftLead.setGains(gains);
-		this.rightLead.setGains(gains);
-	}
 
 	public void drive(ControlMode controlMode, double left, double right) {
 		this.leftLead.set(controlMode, left);
@@ -160,11 +122,6 @@ public class Drivetrain extends Subsystem {
 		this.isHighGear = isHighGear;
 	}
 
-	public double getAngle() {
-		double[] ypr = new double[3];
-		pigeon.getYawPitchRoll(ypr);
-		return ypr[0];
-	}
 
 	public double getDistance() {
 		return rightLead.getPrimarySensorPosition();
@@ -176,12 +133,5 @@ public class Drivetrain extends Subsystem {
 
 	@Override
 	public void periodic() {
-		SmartDashboard.putBoolean("Drivetrain High Gear", isHighGear);
-		SmartDashboard.putNumber("Drivetrain Angle", getAngle());
-		SmartDashboard.putNumber("Angle Error", rightLead.getClosedLoopError(1));
-		SmartDashboard.putNumber("Drivetrain Velocity", getVelocity());
-		SmartDashboard.putNumber("Drivetrain Distance", getDistance());
-		SmartDashboard.putNumber("Left Lead Current", leftLead.getOutputCurrent());
-		SmartDashboard.putNumber("Left Follower Current", leftFollower.getOutputCurrent());
 	}
 }
